@@ -1,3 +1,4 @@
+
 import gradio as gr
 
 # Symptoms and Diseases Mapping
@@ -23,7 +24,6 @@ def predict(symptoms):
         matches = len(set(symptoms) & set(disease_symptoms))
         matched_diseases[disease] = matches
 
-    # Sort diseases by number of matches
     sorted_diseases = sorted(matched_diseases.items(), key=lambda x: x[1], reverse=True)
     top_diseases = [d[0] for d in sorted_diseases if d[1] > 0]
 
@@ -34,7 +34,6 @@ def predict(symptoms):
     for disease in top_diseases:
         response += f"- {disease}\n"
 
-    # Follow-up Questions
     follow_ups = []
     for symptom in symptoms:
         symptom = symptom.strip()
@@ -46,16 +45,22 @@ def predict(symptoms):
         for q in follow_ups:
             response += f"- {q}\n"
 
-    response += "\n(Please note: This is for informational purposes only and not a diagnosis.)"
+    response += "\n⚠️ Note: This is for informational purposes only. Consult a doctor for diagnosis."
     return response
 
-# Gradio Interface
-iface = gr.Interface(
-    fn=predict,
-    inputs=gr.Textbox(placeholder="Enter your symptoms separated by commas..."),
-    outputs="text",
-    title="Healthcare AI Assistant",
-    description="Describe your symptoms (e.g., fever, cough, fatigue) and get possible condition suggestions!"
-)
+# Gradio Blocks Interface
+with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue")) as demo:
+    gr.Markdown("## 🩺 Healthcare AI Assistant")
+    gr.Markdown("_Describe your symptoms and I’ll help you explore possible conditions._")
 
-iface.launch()
+    with gr.Row():
+        input_box = gr.Textbox(placeholder="e.g., fever, cough, fatigue", label="Enter Symptoms")
+        submit_btn = gr.Button("Analyze")
+
+    output_box = gr.Textbox(label="Prediction")
+
+    submit_btn.click(predict, inputs=input_box, outputs=output_box)
+
+    gr.Markdown("### ⚠️ _Disclaimer: This is not a diagnosis. Always consult a healthcare provider for serious concerns._")
+
+demo.launch()
