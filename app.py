@@ -1,6 +1,6 @@
-
-
 import gradio as gr
+from fastapi import FastAPI
+from gradio.routes import mount_gradio_app
 
 # Symptoms and Diseases Mapping
 disease_data = {
@@ -50,7 +50,7 @@ def predict(symptoms):
     return response
 
 # Gradio Interface
-iface = gr.Interface(
+demo = gr.Interface(
     fn=predict,
     inputs=gr.Textbox(placeholder="Enter your symptoms separated by commas..."),
     outputs="text",
@@ -58,4 +58,6 @@ iface = gr.Interface(
     description="Describe your symptoms (e.g., fever, cough, fatigue) and get possible condition suggestions!"
 )
 
-iface.launch(share=True)
+# FastAPI app for Vercel
+app = FastAPI()
+app = mount_gradio_app(app, demo, path="/")
