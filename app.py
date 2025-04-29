@@ -1,63 +1,45 @@
-import gradio as gr
-from fastapi import FastAPI
-from gradio.routes import mount_gradio_app
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 
-# Symptoms and Diseases Mapping
+app = Flask(__name__)
+CORS(app)  # Allow cross-origin requests (from frontend)
+
+# Symptom-disease mapping
 disease_data = {
     "Influenza (Flu)": ["fever", "cough", "fatigue", "body aches"],
     "COVID-19": ["fever", "cough", "loss of taste", "difficulty breathing"],
     "Common Cold": ["sore throat", "runny nose", "cough", "mild fever"],
 }
 
-# Follow-up Questions
 follow_up_questions = {
     "fever": "How high is your fever?",
     "cough": "Is your cough dry or with mucus?",
     "fatigue": "Since when are you feeling fatigued?",
 }
 
-# Prediction Function
-def predict(symptoms):
-    symptoms = symptoms.lower().split(",")
-    matched_diseases = {}
+@app.route("/predict", methods=["POST"])
+def predict():
+    data = request.get_json()
+    symptoms = data.get("symptoms", "").lower().split(",")
+    matched = {}
 
-    for disease, disease_symptoms in disease_data.items():
-        matches = len(set(symptoms) & set(disease_symptoms))
-        matched_diseases[disease] = matches
+    for disease, sym_list in disease_data.items():
+        matched[disease] = len(set(symptoms) & set(sym_list))
 
-    sorted_diseases = sorted(matched_diseases.items(), key=lambda x: x[1], reverse=True)
-    top_diseases = [d[0] for d in sorted_diseases if d[1] > 0]
+    sorted_diseases = sorted(matched.items(), key=lambda x: x[1], reverse=True)
+    top = [d[0] for d in sorted_diseases if d[1] > 0]
 
-    if not top_diseases:
-        return "I'm sorry, I couldn't match your symptoms to any common conditions. Please consult a healthcare provider."
+    if not top:
+        return jsonify({"result": "No match. Please consult a doctor."})
 
-    response = f"Based on your symptoms, possible conditions include:\n\n"
-    for disease in top_diseases:
-        response += f"- {disease}\n"
+    result = f"Possible conditions:\n" + "".join(f"- {d}\n" for d in top)
 
-    follow_ups = []
-    for symptom in symptoms:
-        symptom = symptom.strip()
-        if symptom in follow_up_questions:
-            follow_ups.append(follow_up_questions[symptom])
+    followups = [follow_up_questions[s] for s in symptoms if s in follow_up_questions]
+    if followups:
+        result += "\nFollow-up Questions:\n" + "".join(f"- {q}\n" for q in followups)
 
-    if follow_ups:
-        response += "\nFollow-up Questions:\n"
-        for q in follow_ups:
-            response += f"- {q}\n"
+    return jsonify({"result": result})
 
-    response += "\n(Please note: This is for informational purposes only and not a diagnosis.)"
-    return response
+if __name__ == "__main__":
+    app.run()
 
-# Gradio Interface
-demo = gr.Interface(
-    fn=predict,
-    inputs=gr.Textbox(placeholder="Enter your symptoms separated by commas..."),
-    outputs="text",
-    title="Healthcare AI Assistant",
-    description="Describe your symptoms (e.g., fever, cough, fatigue) and get possible condition suggestions!"
-)
-
-# FastAPI app for Vercel
-app = FastAPI()
-app = mount_gradio_app(app, demo, path="/")
