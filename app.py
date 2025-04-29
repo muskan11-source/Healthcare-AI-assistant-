@@ -1,20 +1,26 @@
+
+
 import gradio as gr
 
+# Symptoms and Diseases Mapping
 disease_data = {
     "Influenza (Flu)": ["fever", "cough", "fatigue", "body aches"],
     "COVID-19": ["fever", "cough", "loss of taste", "difficulty breathing"],
     "Common Cold": ["sore throat", "runny nose", "cough", "mild fever"],
 }
 
+# Follow-up Questions
 follow_up_questions = {
     "fever": "How high is your fever?",
     "cough": "Is your cough dry or with mucus?",
     "fatigue": "Since when are you feeling fatigued?",
 }
 
+# Prediction Function
 def predict(symptoms):
     symptoms = symptoms.lower().split(",")
     matched_diseases = {}
+
     for disease, disease_symptoms in disease_data.items():
         matches = len(set(symptoms) & set(disease_symptoms))
         matched_diseases[disease] = matches
@@ -43,6 +49,7 @@ def predict(symptoms):
     response += "\n(Please note: This is for informational purposes only and not a diagnosis.)"
     return response
 
+# Gradio Interface
 iface = gr.Interface(
     fn=predict,
     inputs=gr.Textbox(placeholder="Enter your symptoms separated by commas..."),
@@ -51,5 +58,4 @@ iface = gr.Interface(
     description="Describe your symptoms (e.g., fever, cough, fatigue) and get possible condition suggestions!"
 )
 
-iface.launch()
-
+iface.launch(share=True)
