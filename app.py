@@ -30,7 +30,7 @@ def predict(symptoms):
     if not top_diseases:
         return "I'm sorry, I couldn't match your symptoms to any common conditions. Please consult a healthcare provider."
 
-    response = f"Based on your symptoms, possible conditions include:\n\n"
+    response = "Based on your symptoms, possible conditions include:\n\n"
     for disease in top_diseases:
         response += f"- {disease}\n"
 
@@ -45,22 +45,16 @@ def predict(symptoms):
         for q in follow_ups:
             response += f"- {q}\n"
 
-    response += "\n⚠️ Note: This is for informational purposes only. Consult a doctor for diagnosis."
+    response += "\n\nDisclaimer: This tool is for informational purposes only and does not replace professional medical advice. Please consult a doctor if symptoms persist or worsen."
     return response
 
-# Gradio Blocks Interface
-with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue")) as demo:
-    gr.Markdown("## 🩺 Healthcare AI Assistant")
-    gr.Markdown("_Describe your symptoms and I’ll help you explore possible conditions._")
+# Gradio Interface
+iface = gr.Interface(
+    fn=predict,
+    inputs=gr.Textbox(placeholder="Enter your symptoms separated by commas..."),
+    outputs="text",
+    title="Healthcare AI Assistant",
+    description="Enter your symptoms (e.g., fever, cough, fatigue) to get possible health condition suggestions. Built with AI.",
+)
 
-    with gr.Row():
-        input_box = gr.Textbox(placeholder="e.g., fever, cough, fatigue", label="Enter Symptoms")
-        submit_btn = gr.Button("Analyze")
-
-    output_box = gr.Textbox(label="Prediction")
-
-    submit_btn.click(predict, inputs=input_box, outputs=output_box)
-
-    gr.Markdown("### ⚠️ _Disclaimer: This is not a diagnosis. Always consult a healthcare provider for serious concerns._")
-
-demo.launch()
+iface.launch()
